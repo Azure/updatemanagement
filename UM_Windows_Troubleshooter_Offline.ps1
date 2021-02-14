@@ -122,18 +122,18 @@ function getRegValue {
 }
 
 function Validate-OperatingSystem {
-    $osRequirementsLink = "https://docs.microsoft.com/azure/automation/automation-update-management#supported-client-types"
+    $osRequirementsLink = "https://docs.microsoft.com/en-us/azure/automation/update-management/overview#clients"
 
     $ruleId = "OperatingSystemCheck"
     $ruleName = "Operating System"
-    $ruleDescription = "The Windows Operating system must be version 6.1.7601 (Windows Server 2008 R2 SP1) or higher"
+    $ruleDescription = "The Windows Operating system must be version 6.1.7600 (Windows Server 2008 R2) or higher"
     $result = $null
     $resultMessage = $null
     $ruleGroupId = "prerequisites"
     $ruleGroupName = "Prerequisite Checks"
     $resultMessageArguments = @()
 
-    if([System.Environment]::OSVersion.Version -ge [System.Version]"6.1.7601") {
+    if([System.Environment]::OSVersion.Version -ge [System.Version]"6.1.7600") {
         $result = "Passed"
         $resultMessage = "Operating System version is supported"
     } else {
