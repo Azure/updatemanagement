@@ -1173,7 +1173,10 @@ def check_os_version():
        re.search("rhel-8", os_version, re.IGNORECASE) or \
        re.search("centos-6", os_version, re.IGNORECASE) or \
        re.search("centos-8", os_version, re.IGNORECASE) or \
-       re.search("centos-7", os_version, re.IGNORECASE) :
+       re.search("centos-7", os_version, re.IGNORECASE) or \
+       re.search("Oracle-6", os_version, re.IGNORECASE) or \
+       re.search("Oracle-8", os_version, re.IGNORECASE) or \
+       re.search("Oracle-7", os_version, re.IGNORECASE) :
         write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Operating system version is supported")
     else:
         log_msg = "Operating System version (%s) is not supported. Supported versions listed here: %s" % (os_version, supported_os_url)
