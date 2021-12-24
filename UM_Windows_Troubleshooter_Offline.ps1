@@ -740,7 +740,7 @@ function Validate-WUIsEnabled {
 
     $ruleId = "WUServiceRunningCheck"
     $ruleName = "WU service status"
-    $ruleDescription = "WU must be running on the machine"
+    $ruleDescription = "WU must not be in the disabled state."
     $result = $null
     $resultMessage = $null
     $ruleGroupId = "servicehealth"
@@ -749,10 +749,10 @@ function Validate-WUIsEnabled {
 
     if(Get-Service -Name $windowsServiceName -ErrorAction SilentlyContinue | select -property name,starttype | Where-Object {$_.StartType -eq "Disabled"} | Select-Object) {
         $result = "Failed"
-        $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is not running"
+        $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is disabled. Please set it to automatic or manual."
     } else {
         $result = "Passed"
-        $resultMessage = "$mmaServiceDisplayName service ($windowsServiceName) is running"
+        $resultMessage = "$mmaServiceDisplayName service ($windowsServiceName) is running."
     }
     $resultMessageId = "$ruleId.$result"
 
