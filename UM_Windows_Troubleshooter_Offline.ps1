@@ -734,6 +734,31 @@ function Validate-IMDSConnectivity
     return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
 }
 
+function Validate-WUIsEnabled {
+    $windowsServiceName = "wuauserv"
+    $windowsServiceDisplayName = "Windows Update"
+
+    $ruleId = "WUServiceRunningCheck"
+    $ruleName = "WU service status"
+    $ruleDescription = "WU must not be in the disabled state."
+    $result = $null
+    $resultMessage = $null
+    $ruleGroupId = "servicehealth"
+    $ruleGroupName = "WU Service Health Check"
+    $resultMessageArguments = @() + $windowsServiceDisplayName + $windowsServiceName
+
+    if(Get-Service -Name $windowsServiceName -ErrorAction SilentlyContinue | select -property name,starttype | Where-Object {$_.StartType -eq "Disabled"} | Select-Object) {
+        $result = "Failed"
+        $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is disabled. Please set it to automatic or manual. You can run 'sc config wuauserv start= demand' to set it to manual."
+    } else {
+        $result = "Passed"
+        $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is running."
+    }
+    $resultMessageId = "$ruleId.$result"
+
+    return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
+}
+
 $validationResults += Validate-OperatingSystem
 $validationResults += Validate-NetFrameworkInstalled
 $validationResults += Validate-WmfInstalled
@@ -750,6 +775,7 @@ $validationResults += Validate-AutomaticUpdateEnabled
 $validationResults += Validate-HttpsConnection
 $validationResults += Validate-ProxySettings
 $validationResults += Validate-IMDSConnectivity
+$validationResults += Validate-WUIsEnabled
 
 if($returnAsJson.IsPresent) {
     return ConvertTo-Json $validationResults -Compress
