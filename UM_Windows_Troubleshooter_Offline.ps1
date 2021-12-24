@@ -749,7 +749,7 @@ function Validate-WUIsEnabled {
 
     if(Get-Service -Name $windowsServiceName -ErrorAction SilentlyContinue | select -property name,starttype | Where-Object {$_.StartType -eq "Disabled"} | Select-Object) {
         $result = "Failed"
-        $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is disabled. Please set it to automatic or manual."
+        $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is disabled. Please set it to automatic or manual. You can run 'sc config wuauserv start= demand' to set it to manual."
     } else {
         $result = "Passed"
         $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is running."
