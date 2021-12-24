@@ -752,7 +752,7 @@ function Validate-WUIsEnabled {
         $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is disabled. Please set it to automatic or manual."
     } else {
         $result = "Passed"
-        $resultMessage = "$mmaServiceDisplayName service ($windowsServiceName) is running."
+        $resultMessage = "$windowsServiceDisplayName service ($windowsServiceName) is running."
     }
     $resultMessageId = "$ruleId.$result"
 
