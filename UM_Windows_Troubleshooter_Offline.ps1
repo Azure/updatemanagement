@@ -386,6 +386,85 @@ function Validate-OperationsEndpointConnectivity {
     return Validate-EndpointConnectivity $endpoint $ruleId $ruleName
 }
 
+function Validate-LAOdsEndpointConnectivity {
+    #https://docs.microsoft.com/en-us/azure/automation/automation-network-configuration#update-management-and-change-tracking-and-inventory
+    $laWorkspaceId = ""
+    $odsEndpoint = ""
+    $multiple = 0
+    $ruleId = "LAOdsEndpointConnectivity"
+    $ruleName = "LA ODS endpoint"
+    $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA ODS endpoint"
+
+    try {
+        $workspaceInfo = (New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg').GetCloudWorkspaces()
+        foreach ($workspace in $workspaceInfo) {
+            $laWorkspaceId = $workspace.workspaceID.ToString()
+            $multiple += 1
+        }
+    } catch {
+        #nothing to do.
+    }
+
+    if($multiple -gt 1) {
+        $ruleGroupId = "connectivity"
+        $ruleGroupName = "connectivity"
+        $result = "Failed"
+        $resultMessage = "VM connected to multiple workspaces."
+        $resultMessageId = "$ruleId.$result"
+        return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
+    }
+
+    if($automationAccountLocation -eq "usgovvirginia"){
+        $odsEndpoint = "$laWorkspaceId.ods.opinsights.azure.us"
+    } elseif($automationAccountLocation -eq "chinaeast2") {
+        $odsEndpoint = "$laWorkspaceId.ods.opinsights.azure.cn"
+    } else {
+        $odsEndpoint = "$laWorkspaceId.ods.opinsights.azure.com"
+    }
+
+    return Validate-EndpointConnectivity $odsEndpoint $ruleId $ruleName $ruleDescription
+}
+
+function Validate-LAOmsEndpointConnectivity {
+    #https://docs.microsoft.com/en-us/azure/automation/automation-network-configuration#update-management-and-change-tracking-and-inventory
+    $laWorkspaceId = ""
+    $omsEndpoint = ""
+    $multiple = 0
+
+    $ruleId = "LAOmsEndpointConnectivity"
+    $ruleName = "LA OMS endpoint"
+    $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA OMS endpoint"
+
+    try {
+        $workspaceInfo = (New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg').GetCloudWorkspaces()
+        foreach ($workspace in $workspaceInfo) {
+            $laWorkspaceId = $workspace.workspaceID.ToString()
+            $multiple += 1
+        }
+    } catch {
+        #nothing to do.
+    }
+
+    if($multiple -gt 1) {
+        $ruleGroupId = "connectivity"
+        $ruleGroupName = "connectivity"
+        $result = "Failed"
+        $resultMessage = "VM connected to multiple workspaces."
+        $resultMessageId = "$ruleId.$result"
+        return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
+    }
+
+    if($automationAccountLocation -eq "usgovvirginia"){
+        $omsEndpoint = "$laWorkspaceId.oms.opinsights.azure.us"
+    } elseif($automationAccountLocation -eq "chinaeast2") {
+        $omsEndpoint = "$laWorkspaceId.oms.opinsights.azure.cn"
+    } else {
+        $omsEndpoint = "$laWorkspaceId.oms.opinsights.azure.com"
+    }
+
+    return Validate-EndpointConnectivity $omsEndpoint $ruleId $ruleName $ruleDescription
+}
+
 function Validate-MmaIsRunning {
     $mmaServiceName = "HealthService"
     $mmaServiceDisplayName = "Microsoft Monitoring Agent"
@@ -460,26 +539,36 @@ function Validate-MMALinkedWorkspace {
     $ruleGroupName = "VM Service Health Checks"
 
     $workspaceId = "";
+    $workspaceCount = 0;
 
     try {
         $workspaceInfo = (New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg').GetCloudWorkspaces()
         foreach ($workspace in $workspaceInfo) {
             $workspaceId += $workspace.workspaceID.ToString() + " "
+            $workspaceCount += 1
         }
     } catch {
         #nothing to do.
     }
+    
     $resultMessageArguments = @() + $workspaceId
     
     if ("".equals($workspaceId)) {
         $result = "Failed"
         $resultMessage = "VM is not reporting to any workspace."
+        $reason = "NoWorkspace"
+        $resultMessageId = "$ruleId.$result.$reason"
     }
     else {
-        $result = "Passed"
-        $resultMessage = "This VM is reporting to workspace(s) $workspaceId Please make sure automation account is linked to same workspace."
+        if ($workspaceCount -gt 1) {
+            $result = "Failed"
+            $resultMessage = "VM is reporting to multiple workspaces, WorkspaceIds: $workspaceId. Please make sure automation account is linked to single workspace."
+        } else {
+            $result = "Passed"
+            $resultMessage = "VM is reporting to workspace $workspaceId. Please make sure automation account is linked to same workspace."
+        }
+        $resultMessageId = "$ruleId.$result"
     }
-    $resultMessageId = "$ruleId.$result"
     return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
 }
 
@@ -734,6 +823,41 @@ function Validate-IMDSConnectivity
     return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
 }
 
+function Validate-SHRWIsRunning {
+    $mmaServiceName = "HealthService"
+    $mmaServiceDisplayName = "Microsoft Monitoring Agent"
+    # Update the event id for HRW start and stop here in case it is updated.
+    $hrwStartedEvent = 15003
+    $hrwStoppedEvent = 15004
+    $mmaEventChannel = "Microsoft-SMA/Operational"
+
+    $ruleId = "SystemHybridRunbookWorkerRunningCheck"
+    $ruleName = "Hybrid runbook worker status"
+    $ruleDescription = "Hybrid runbook worker must be in running state."
+    $result = $null
+    $resultMessage = $null
+    $ruleGroupId = "servicehealth"
+    $ruleGroupName = "VM Service Health Checks"
+
+    $event = Get-WinEvent $mmaEventChannel | Where-Object { ($_.Id -eq $hrwStartedEvent -or $_.Id -eq $hrwStoppedEvent) -and($_.Properties[1].Value -eq $_.Properties[2].Value + "_" + $_.Properties[3].Value) } | Select-Object -First 1
+    if ($event.Id -eq $hrwStartedEvent)
+    {
+        $result = "Passed"
+        $resultMessageArguments = @()
+        $resultMessage = "Hybrid runbook worker is running."
+    }
+    else
+    {
+	    $result = "Failed"
+        $resultMessageArguments = @() + $mmaServiceDisplayName + $mmaServiceName
+        $resultMessage = "Hybrid runbook worker is in stopped state. Please restart $mmaServiceDisplayName service ($mmaServiceName) and rerun the troubleshooter to ensure that hybrid runbook worker is in running state."
+    }
+
+    $resultMessageId = "$ruleId.$result"
+
+    return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
+}
+
 function Validate-WUIsEnabled {
     $windowsServiceName = "wuauserv"
     $windowsServiceDisplayName = "Windows Update"
@@ -765,6 +889,7 @@ $validationResults += Validate-WmfInstalled
 Validate-RegistrationEndpointsConnectivity | % { $validationResults += $_ }
 $validationResults += Validate-OperationsEndpointConnectivity
 $validationResults += Validate-MmaIsRunning
+$validationResults += Validate-SHRWIsRunning
 $validationResults += Validate-MmaEventLogHasNoErrors
 $validationResults += Validate-MMALinkedWorkspace
 $validationResults += Validate-MachineKeysFolderAccess
@@ -776,6 +901,8 @@ $validationResults += Validate-HttpsConnection
 $validationResults += Validate-ProxySettings
 $validationResults += Validate-IMDSConnectivity
 $validationResults += Validate-WUIsEnabled
+$validationResults += Validate-LAOdsEndpointConnectivity
+$validationResults += Validate-LAOmsEndpointConnectivity
 
 if($returnAsJson.IsPresent) {
     return ConvertTo-Json $validationResults -Compress
