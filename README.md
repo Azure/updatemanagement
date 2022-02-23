@@ -1,6 +1,5 @@
 # Note to Devs
-This is a public library, please feel free to contribute to this.
-Reviews will be done periodically.
+This is a public library, feel free to contribute.
 
 # updatemanagement
 Contains troubleshooting tools &amp; scripts of azure update management.
