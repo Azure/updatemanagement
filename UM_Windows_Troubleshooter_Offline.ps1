@@ -122,7 +122,7 @@ function getRegValue {
 }
 
 function Validate-OperatingSystem {
-    $osRequirementsLink = "https://docs.microsoft.com/azure/automation/automation-update-management#supported-client-types"
+    $osRequirementsLink = "https://docs.microsoft.com/en-Us/azure/automation/update-management/operating-system-requirements"
 
     $ruleId = "OperatingSystemCheck"
     $ruleName = "Operating System"

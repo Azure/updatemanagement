@@ -1157,7 +1157,7 @@ def check_os_version():
     rule_group_id = "prerequisites"
     os_tuple = utils.get_linux_distribution()
     os_version = os_tuple[0] + "-" + os_tuple[1]
-    supported_os_url = "https://docs.microsoft.com/en-us/azure/automation/update-management/operating-system-requirements#supported-operating-systems"
+    supported_os_url = "https://docs.microsoft.com/en-Us/azure/automation/update-management/operating-system-requirements"
     # We support (Ubuntu 14.04, Ubuntu 16.04, SuSE 11, SuSE 12, Redhat 6, Redhat 7, CentOs 6, CentOs 7)
     if re.search("Ubuntu-14.04", os_version, re.IGNORECASE) or \
        re.search("Ubuntu-16.04", os_version, re.IGNORECASE) or \
