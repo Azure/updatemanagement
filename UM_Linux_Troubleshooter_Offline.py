@@ -6,7 +6,6 @@ import sys
 import json
 import shlex
 import subprocess
-
 import datetime
 import platform
 if os.name != "nt": import pwd  # do not make this multi-line - the packager won't package correctly
@@ -1388,27 +1387,30 @@ def check_log_analytics_endpoints():
                 write_log_output(rule_id + str(i), rule_group_id, status_failed, empty_failure_reason, "TCP test for {" + endpoint + "} (port 443) failed", endpoint)
 
 def check_endpoint(workspace, endpoint):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    new_endpoint = None
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(30) #setting a timeout of 30 seconds.
+        new_endpoint = None
 
-    if "*" in endpoint and workspace is not None:
-        new_endpoint = endpoint.replace("*", workspace)
-    elif "*" not in endpoint:
-        new_endpoint = endpoint
+        if "*" in endpoint and workspace is not None:
+            new_endpoint = endpoint.replace("*", workspace)
+        elif "*" not in endpoint:
+            new_endpoint = endpoint
 
-    if new_endpoint is not None:
-        try:
-            response = sock.connect_ex((new_endpoint, 443))
+        if new_endpoint is not None:
+            
+                response = sock.connect_ex((new_endpoint, 443))
 
-            if response == 0:
-                return True
-            else:
-                return False
-
-        except Exception as ex:
+                if response == 0:
+                    return True
+                else:
+                    return False
+        else:
             return False
-    else:
+    except Exception as ex:
         return False
+    finally:
+        sock.close()
 
 
 def get_jrds_endpoint(workspace):
