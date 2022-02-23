@@ -12,31 +12,31 @@
 
 .TAGS Automation UpdateManagement HybridRunbookWorker Troubleshoot
 
-.LICENSEURI 
+.LICENSEURI
 
-.PROJECTURI 
+.PROJECTURI
 
-.ICONURI 
+.ICONURI
 
-.EXTERNALMODULEDEPENDENCIES 
+.EXTERNALMODULEDEPENDENCIES
 
-.REQUIREDSCRIPTS 
+.REQUIREDSCRIPTS
 
-.EXTERNALSCRIPTDEPENDENCIES 
+.EXTERNALSCRIPTDEPENDENCIES
 
 .RELEASENOTES
 Original set of troubleshooting checks for Update Management Agent (Automation Hybrid Runbook Worker) on Windows machines
 
-.PRIVATEDATA 
+.PRIVATEDATA
 
 #>
 
-<# 
+<#
 
-.DESCRIPTION 
- Troubleshooting utility for Update Management Agent (Automation Hybrid Runbook Worker) on Windows machines 
+.DESCRIPTION
+ Troubleshooting utility for Update Management Agent (Automation Hybrid Runbook Worker) on Windows machines
 
-#> 
+#>
 param(
     [string]$automationAccountLocation,
     [switch]$returnCompactFormat,
@@ -358,7 +358,7 @@ function Validate-OperationsEndpointConnectivity {
     if($automationAccountLocation -eq "usgovvirginia"){
         $endpoint = "usge-jobruntimedata-prod-su1.azure-automation.us"
     } elseif($automationAccountLocation -eq "usgovarizona") {
-        $endpoint = "phx-jobruntimedata-prod-su1.azure-automation.us"    
+        $endpoint = "phx-jobruntimedata-prod-su1.azure-automation.us"
     } elseif($automationAccountLocation -eq "chinaeast2") {
         $endpoint = "sha2-jobruntimedata-prod-su1.azure-automation.cn"
     } else {
@@ -552,7 +552,7 @@ function Validate-MMALinkedWorkspace {
     }
     
     $resultMessageArguments = @() + $workspaceId
-    
+
     if ("".equals($workspaceId)) {
         $result = "Failed"
         $resultMessage = "VM is not reporting to any workspace."
@@ -696,7 +696,7 @@ function Validate-HttpsConnection {
     $uri = "https://eus2-jobruntimedata-prod-su1.azure-automation.net"
     try
     {
-        Invoke-WebRequest -URI $uri -UseBasicParsing
+        Invoke-WebRequest -URI $uri -UseBasicParsing > $null
         $result = "Passed"
         $resultMessage = "VM is able to make https requests."
         $resultMessageId = "$ruleId.$result"
