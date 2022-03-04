@@ -1005,22 +1005,16 @@ class RepositoryManager:
         return 1  #success
 
     def pingEndpoint(self, uri):
-        hostname = uri
-        response = os.system("ping -c 1 " + hostname + " >/dev/null 2>&1")
+        unixCmd = "curl --head " + uri
+        (out, err) = self.executeCommand(unixCmd)
 
-        if response == 0:
-            self.appendToLogs(hostname + ' Ping successful!', status_debug)
-            return 1
+        if err != '':
+            self.appendToLogs("Error while pinging repos -- " + err, status_debug)
+            return None
 
-        sleep_wait=1
-        max_ping_wait=2
-        count=0
-        #will try pinging till 2 seconds.
-        while (count < max_ping_wait and os.system("ping -c 1 " + hostname + " >/dev/null 2>&1")):
-            time.sleep(sleep_wait)
-            count+=1
+        out = int(out.split(' ')[1])
 
-        if (count < max_ping_wait):
+        if out < 400:
             self.appendToLogs(hostname + ' Ping successful!', status_debug)
             return 1
         else:
