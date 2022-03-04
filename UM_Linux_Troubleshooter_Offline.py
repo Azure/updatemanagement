@@ -874,7 +874,6 @@ class RepositoryManager:
 
     def checkRule(self):
         osInQuestion = get_os_type()
-        
         repoUriList = self.getConfiguredRepos(osInQuestion)
         self.appendToLogs("repo URI List", status_debug)
         if repoUriList is None:
@@ -894,6 +893,8 @@ class RepositoryManager:
         elif osType == OSType.Redhat:
             repoList = self.getConfiguredReposForCentos()
         elif osType == OSType.CentOs:
+            repoList = self.getConfiguredReposForCentos()
+        elif osType == OSType.Oracle:
             repoList = self.getConfiguredReposForCentos()
         else:
             self.appendToLogs("OS Not Supported")
@@ -944,7 +945,7 @@ class RepositoryManager:
         out1 = out.split("\n")
         repoList = []
         for str1 in out1:
-            if len(str1) >= 2: #format: "deb uri", excluding space or other invalid strings
+            if len(str1) >= 2: #excluding space or other invalid strings
                 repoList.append(str(str1))
         return repoList
 
@@ -1109,6 +1110,10 @@ def get_os_type():
         return OSType.Redhat
     elif re.search("centos", os_version, re.IGNORECASE) != None or re.search("centos", vmMachineInfo, re.IGNORECASE) != None:
         return OSType.CentOs
+    elif re.search("oracle", os_version, re.IGNORECASE) != None or re.search("oracle", vmMachineInfo, re.IGNORECASE) != None:
+        return OSType.Oracle
+    elif re.search("rhel", os_version, re.IGNORECASE) != None or re.search("red hat", vmMachineInfo, re.IGNORECASE) != None:
+        return OSType.Redhat
     else:
         return OSType.NotAvailable
 
