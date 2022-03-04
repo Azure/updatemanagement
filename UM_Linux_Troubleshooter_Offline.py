@@ -956,12 +956,7 @@ class RepositoryManager:
         return repoList
 
     def getConfiguredReposForUbuntu(self):
-        repoFile = "/etc/apt/sources.list"
-        if os.path.isfile(repoFile) is False:
-            self.appendToLogs("Error - Repo File /etc/apt/sources.list not present", status_debug)
-            return None
-        
-        unixCmd = "grep -Erh ^deb /etc/apt/sources.list*"
+        unixCmd = "apt-cache policy |grep http |awk '{print $2}' |sort -u"
 
         (out, err) = self.executeCommand(unixCmd)
 
@@ -972,9 +967,8 @@ class RepositoryManager:
         out1 = out.split("\n")
         repoList = []
         for str1 in out1:
-            strList = str1.split(" ")
-            if len(strList) >= 2: #format: "deb uri", excluding space or other invalid strings
-                repoList.append(strList[1])
+            if len(str1) >= 2: #format: "deb uri", excluding space or other invalid strings
+                repoList.append(str(str1))
         return repoList
 
 
