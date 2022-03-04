@@ -1006,19 +1006,20 @@ class RepositoryManager:
 
     def pingEndpoint(self, uri):
         unixCmd = "curl --head " + uri
-        (out, err) = self.executeCommand(unixCmd)
 
-        if err != '':
-            self.appendToLogs("Error while pinging repos -- " + err, status_debug)
-            return None
+        try:
+            (out, err) = self.executeCommand(unixCmd)
 
-        out = int(out.split(' ')[1])
+            out = int(out.split(' ')[1])
 
-        if out < 400:
-            self.appendToLogs(hostname + ' Ping successful!', status_debug)
-            return 1
-        else:
-            self.appendToLogs(hostname + ' Ping unsuccessful.', status_debug)
+            if out < 400:
+                self.appendToLogs(uri + ' Ping successful!', status_debug)
+                return 1
+            else:
+                self.appendToLogs(uri + ' Ping unsuccessful.', status_debug)
+                return 0
+        except Exception as e:
+            print("Error encountered while pinging repos: " + e)
             return 0
 
     def extractNetLocFromUris(self, repoUris):
@@ -1094,12 +1095,7 @@ def main(output_path=None, return_json_output="False"):
     check_agent_service_endpoint()
     check_jrds_endpoint(workspace)
     check_log_analytics_endpoints()
-
-    try:
-        print ("Checking access to linux repos")
-        check_access_to_linux_repos()
-    except Exception as e:
-        pass
+    check_access_to_linux_repos()
 
     if return_json_output == "True":
         print (json.dumps([obj.__dict__ for obj in rule_info_list]))
