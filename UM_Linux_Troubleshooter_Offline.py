@@ -1365,7 +1365,7 @@ def check_log_analytics_endpoints():
             else:
                 write_log_output(rule_id + str(i), rule_group_id, status_failed, empty_failure_reason, "TCP test for {" + endpoint + "} (port 443) failed", endpoint)
     else:
-        log_analytics_endpoints = ["*.ods.opinsights.azure.com", "*.oms.opinsights.azure.com", "ods.systemcenteradvisor.com"]
+        log_analytics_endpoints = ["*.ods.opinsights.azure.com", "*.oms.opinsights.azure.com"]
         for endpoint in log_analytics_endpoints:
             i += 1
             if "*" in endpoint and workspace is not None:
