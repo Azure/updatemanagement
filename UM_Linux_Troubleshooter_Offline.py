@@ -1005,26 +1005,21 @@ class RepositoryManager:
         return 1  #success
 
     def pingEndpoint(self, uri):
-        hostname = uri
-        response = os.system("ping -c 1 " + hostname + " >/dev/null 2>&1")
+        unixCmd = "curl --head " + uri
 
-        if response == 0:
-            self.appendToLogs(hostname + ' Ping successful!', status_debug)
-            return 1
+        try:
+            (out, err) = self.executeCommand(unixCmd)
 
-        sleep_wait=1
-        max_ping_wait=2
-        count=0
-        #will try pinging till 2 seconds.
-        while (count < max_ping_wait and os.system("ping -c 1 " + hostname + " >/dev/null 2>&1")):
-            time.sleep(sleep_wait)
-            count+=1
+            out = int(out.split(' ')[1])
 
-        if (count < max_ping_wait):
-            self.appendToLogs(hostname + ' Ping successful!', status_debug)
-            return 1
-        else:
-            self.appendToLogs(hostname + ' Ping unsuccessful.', status_debug)
+            if out < 400:
+                self.appendToLogs(uri + ' Ping successful!', status_debug)
+                return 1
+            else:
+                self.appendToLogs(uri + ' Ping unsuccessful.', status_debug)
+                return 0
+        except Exception as e:
+            print("Error encountered while pinging repos: " + e)
             return 0
 
     def extractNetLocFromUris(self, repoUris):
@@ -1100,12 +1095,7 @@ def main(output_path=None, return_json_output="False"):
     check_agent_service_endpoint()
     check_jrds_endpoint(workspace)
     check_log_analytics_endpoints()
-
-    try:
-        print ("Checking access to linux repos")
-        check_access_to_linux_repos()
-    except Exception as e:
-        pass
+    check_access_to_linux_repos()
 
     if return_json_output == "True":
         print (json.dumps([obj.__dict__ for obj in rule_info_list]))
@@ -1375,7 +1365,7 @@ def check_log_analytics_endpoints():
             else:
                 write_log_output(rule_id + str(i), rule_group_id, status_failed, empty_failure_reason, "TCP test for {" + endpoint + "} (port 443) failed", endpoint)
     else:
-        log_analytics_endpoints = ["*.ods.opinsights.azure.com", "*.oms.opinsights.azure.com", "ods.systemcenteradvisor.com"]
+        log_analytics_endpoints = ["*.ods.opinsights.azure.com", "*.oms.opinsights.azure.com"]
         for endpoint in log_analytics_endpoints:
             i += 1
             if "*" in endpoint and workspace is not None:
