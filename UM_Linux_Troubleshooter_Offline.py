@@ -990,7 +990,7 @@ class RepositoryManager:
                 self.appendToLogs(uri + ' Ping unsuccessful.', status_debug)
                 return 0
         except Exception as e:
-            print("Error encountered while pinging repos: " + e)
+            print("Error encountered while pinging repos: " + str(e))
             return 0
 
     def extractNetLocFromUris(self, repoUris):
