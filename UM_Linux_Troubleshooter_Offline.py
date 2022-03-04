@@ -892,7 +892,7 @@ class RepositoryManager:
         elif osType == OSType.Suse:
             repoList = self.getConfiguredReposForSuse()
         elif osType == OSType.Redhat:
-            repoList = self.getConfiguredReposForRhel()
+            repoList = self.getConfiguredReposForCentos()
         elif osType == OSType.CentOs:
             repoList = self.getConfiguredReposForCentos()
         else:
@@ -914,34 +914,8 @@ class RepositoryManager:
             self.appendToLogs("Success: Repositories refereshed successfully.", status_debug)
             return [] #success, repositories successfully refreshed means also accessible
 
-
-    def getConfiguredReposForRhel(self):
-        repoDirectory = "/etc/yum.repos.d/"
-        if os.path.exists(repoDirectory) is False:
-            self.appendToLogs("Error - Repo Directory /etc/yum.repos.d/ not present", status_debug)
-            return None
-        
-        unixCmd =  "grep -roEh 'https?://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' /etc/yum.repos.d"
-        (out, err) = self.executeCommand(unixCmd)
-
-        if err != '':
-            self.appendToLogs("Error while extracted repos -- " + err, status_debug)
-            return None
-
-        repoList = []
-        out = out.split("\n")
-        for o in out:
-            if len(o) > 2:
-                repoList.append(o)
-        return repoList
-
     def getConfiguredReposForCentos(self):
-        repoDirectory = "/etc/yum.repos.d/"
-        if os.path.exists(repoDirectory) is False:
-            self.appendToLogs("Error - Repo Directory /etc/yum.repos.d/ not present", status_debug)
-            return None
-        
-        unixCmd =  "grep -roEh 'https?://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' /etc/yum.repos.d"
+        unixCmd =  "yum -v repolist | grep baseurl"
         (out, err) = self.executeCommand(unixCmd)
 
         if err != '':
@@ -952,6 +926,9 @@ class RepositoryManager:
         out = out.split("\n")
         for o in out:
             if len(o) > 2:
+                o = o.split()[2]
+                parsed_url = urlparse(o)
+                o = parsed_url.scheme + "://" + parsed_url.netloc
                 repoList.append(o)
         return repoList
 
