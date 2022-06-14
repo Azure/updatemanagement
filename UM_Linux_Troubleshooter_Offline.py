@@ -1227,8 +1227,8 @@ def check_hybrid_worker_running():
         return
 
     search_text = "ResourceSettings"
-    command = "file -b --mime-encoding " + current_mof
-    current_mof_encoding = os.popen(command).read()
+    command = "encguess " + current_mof
+    current_mof_encoding = os.popen(command).read().split()[1]
     resourceSetting = find_line_in_file("ResourceSettings", current_mof, current_mof_encoding);
     if resourceSetting is None:
         write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Hybrid worker is not running")
