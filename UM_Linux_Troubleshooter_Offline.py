@@ -1060,7 +1060,7 @@ def main(output_path=None, return_json_output="False"):
     check_oms_agent_running()
     check_multihoming()
     check_hybrid_worker_package_present()
-    #check_hybrid_worker_running()
+    check_hybrid_worker_running()
     check_proxy_connectivity()
     check_imds_connectivity()
     check_general_internet_connectivity()
