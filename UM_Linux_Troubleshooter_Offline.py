@@ -920,7 +920,7 @@ class RepositoryManager:
         (out, err) = self.executeCommand(unixCmd)
 
         if err != '':
-            self.appendToLogs("Error while extracted repos -- " + err, status_debug)
+            self.appendToLogs("Error while extracted repositories configured in package manager yum/apt/zypper -- " + err, status_debug)
             return None
 
         repoList = []
@@ -972,7 +972,7 @@ class RepositoryManager:
             status &= self.pingEndpoint(uri)  #not stopping here, because want to ping all uris present
             
         if status == 0:
-            self.appendToLogs("Error - Not able to ping all repositories!", status_debug)
+            self.appendToLogs("Error encountered while accessing repositories configured in package manager yum/apt/zypper via network!", status_debug)
             return 0  #failure
         return 1  #success
 
@@ -991,7 +991,7 @@ class RepositoryManager:
                 self.appendToLogs(uri + ' Ping unsuccessful.', status_debug)
                 return 0
         except Exception as e:
-            print("Error encountered while pinging repos: " + str(e))
+            print("Error encountered while accessing repositories configured in package manager yum/apt/zypper via network: " + str(e))
             return 0
 
     def extractNetLocFromUris(self, repoUris):
@@ -1034,9 +1034,9 @@ def check_access_to_linux_repos():
         write_log_output(rule_id, rule_group_id, log[1], empty_failure_reason, log[0])
 
     if status == 0:
-        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Some of the repositories configured could not be accessed")
+        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Repositories configured in package manager yum/apt/zypper are not accessible via network.")
     else:
-        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Repositories Configured Properly & Accessible")
+        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Repositories configured properly & accessible via network.")
 
 def main(output_path=None, return_json_output="False"):
     if os.geteuid() != 0:
