@@ -920,7 +920,7 @@ class RepositoryManager:
         (out, err) = self.executeCommand(unixCmd)
 
         if err != '':
-            self.appendToLogs("Error while extracted repositories configured in package manager yum/apt/zypper -- " + err, status_debug)
+            self.appendToLogs("Error while extracting repositories configured in package manager yum/apt/zypper -- " + err, status_debug)
             return None
 
         repoList = []
@@ -939,7 +939,7 @@ class RepositoryManager:
         (out, err) = self.executeCommand(unixCmd)
 
         if err != '':
-            self.appendToLogs("Error while extracted repos -- " + err, status_debug)
+            self.appendToLogs("Error while extracting repositories configured in package manager yum/apt/zypper -- " + err, status_debug)
             return None
         
         out1 = out.split("\n")
