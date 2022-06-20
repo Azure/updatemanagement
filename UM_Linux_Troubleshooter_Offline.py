@@ -1276,7 +1276,7 @@ def check_proxy_connectivity():
     if os.environ.get('HTTP_PROXY') is None:
         write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Machine has no proxy enabled.")
     else:
-        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Machine has proxy enabled.")
+        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Machine has proxy enabled. Please follow: %s" % ("https://aka.ms/aumv1networkconf"))
 
 def check_imds_connectivity():
     rule_id = "Linux.ImdsCheck"
