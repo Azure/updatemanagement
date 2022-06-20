@@ -1287,9 +1287,9 @@ def check_imds_connectivity():
 
     if code == 0:
         write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "IMDS Server Information: " + str(out))
-        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Machine is able to reach IMDS server.")
+        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Machine is able to reach IMDS server. (Applicable to azure virtual machines only.)")
     else:
-        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Machine is not able to reach IMDS server. Applicable to azure machines only.")
+        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Machine is not able to reach IMDS server. (Applicable to azure virtual machines only.)")
 
 def check_general_internet_connectivity():
     rule_id = "Linux.InternetConnectionCheck"
