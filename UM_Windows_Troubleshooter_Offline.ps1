@@ -43,6 +43,7 @@ param(
     [switch]$returnAsJson
 )
 
+$global:validWorkspace = ""
 $validationResults = @()
 [string]$CurrentResult = ""
 [string]$CurrentDetails = ""
@@ -314,34 +315,15 @@ function Validate-EndpointConnectivity {
 function Validate-RegistrationEndpointsConnectivity {
     $validationResults = @()
 
-    $managementGroupRegistrations = Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\HealthService\\Parameters\\Management Groups' -ErrorAction SilentlyContinue | select -ExpandProperty PSChildName
-    $managementGroupRegistrations | foreach {$i=1} {
-        $prefix = "AOI-"
-        if ($_ -match "$prefix*") {
-            $workspaceId = $_.Substring($prefix.Length)
-            if($automationAccountLocation -eq "usgovvirginia" -or $automationAccountLocation -eq "usgovarizona"){
-                $endpoint = "$workspaceId.agentsvc.azure-automation.us"
-            } elseif($automationAccountLocation -eq "chinaeast2") {
-                $endpoint = "$workspaceId.agentsvc.azure-automation.cn"
-            } else {
-                $endpoint = "$workspaceId.agentsvc.azure-automation.net"
-            }
-            $ruleId = "AutomationAgentServiceConnectivityCheck$i"
-            $ruleName = "Registration endpoint"
+    $workspace = GetValidWorkspace
 
-            $validationResults += Validate-EndpointConnectivity $endpoint $ruleId $ruleName
-
-            $i++
-        }
-    }
-
-    if($validationResults.Count -eq 0) {
+    if($workspace -eq "Multiple" -or $workspace -eq "None") {
         $ruleId = "AutomationAgentServiceConnectivityCheck1"
         $ruleName = "Registration endpoint"
 
         $result = "Failed"
         $reason = "NoRegistrationFound"
-        $resultMessage = "Unable to find Workspace registration information in registry"
+        $resultMessage = "Unable to find Workspace registration information"
 
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
@@ -350,6 +332,17 @@ function Validate-RegistrationEndpointsConnectivity {
         $validationResults += New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId
     }
 
+    if($automationAccountLocation -eq "usgovvirginia" -or $automationAccountLocation -eq "usgovarizona"){
+        $endpoint = "$workspace.agentsvc.azure-automation.us"
+    } elseif($automationAccountLocation -eq "chinaeast2") {
+        $endpoint = "$workspace.agentsvc.azure-automation.cn"
+    } else {
+        $endpoint = "$workspace.agentsvc.azure-automation.net"
+    }
+    $ruleId = "AutomationAgentServiceConnectivityCheck1"
+    $ruleName = "Registration endpoint"
+
+    $validationResults += Validate-EndpointConnectivity $endpoint $ruleId $ruleName
     return $validationResults
 }
 
@@ -393,12 +386,19 @@ function Validate-LAOdsEndpointConnectivity {
     $ruleName = "LA ODS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA ODS endpoint"
 
-    $workspace = Get-ValidWorkspace
+    $workspace = GetValidWorkspace
+
+    if($workspace -eq "None") {
+        $result = "Failed"
+        $reason = "NoRegistrationFound"
+        $resultMessage = "Unable to find Workspace registration information"
+    }
 
     if($workspace -eq "Multiple") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
+        $reason = "MultipleWorkspaces"
         $resultMessage = "VM connected to multiple workspaces."
         $resultMessageId = "$ruleId.$result"
         return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
@@ -415,30 +415,37 @@ function Validate-LAOdsEndpointConnectivity {
     return Validate-EndpointConnectivity $odsEndpoint $ruleId $ruleName $ruleDescription
 }
 
-function Get-ValidWorkspace {
+function GetValidWorkspace {
+    if($global:validWorkspace -ne "") {
+        return $global:validWorkspace
+    }
+
     try {
         $mmaChannel = "Operations Manager"
         $eventId = 1210
         $workspaces = Get-WinEvent $mmaChannel | Where-Object { ($_.Id -eq $eventId) -and ($_.Message.IndexOf("updates;")) -ne -1 } | Select-Object -Property {$_.Message.Substring($_.Message.IndexOf("AOI-")+4, 36)} -Unique
 
         $cnt = 0
-        $validWorkspace = "";
         Foreach ($w in $workspaces)
         {
             $cnt += 1
-            $validWorkspace = $w
+            $global:validWorkspace = $w.'$_.Message.Substring($_.Message.IndexOf("AOI-")+4, 36)'
         }
 
         if ($cnt -eq 1) {
-            return $validWorkspace.'$_.Message.Substring($_.Message.IndexOf("AOI-")+4, 36)' #Only one valid workspace found.
+            return $global:validWorkspace #Only one valid workspace found.
         } elseif($cnt -gt 1) {
-            return "Multiple" #VM connected to multiple workspaces
+            $global:validWorkspace = "Multiple"
+            #VM connected to multiple workspaces
         } else {
-            return "None" #Event id exists, but no workspace found with updates' solution.
+            $global:validWorkspace = "None"
+            #Event id exists, but no workspace found with updates' solution.
         }
     } catch {
-        return "None" #No such eventId or event channel exist
+        $global:validWorkspace = "None" #No such eventId or event channel exist
     }
+
+    return $global:validWorkspace
 }
 
 function Validate-LAOmsEndpointConnectivity {
@@ -449,12 +456,19 @@ function Validate-LAOmsEndpointConnectivity {
     $ruleName = "LA OMS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA OMS endpoint"
 
-    $workspace = Get-ValidWorkspace
+    $workspace = GetValidWorkspace
+
+    if($workspace -eq "None") {
+        $result = "Failed"
+        $reason = "NoRegistrationFound"
+        $resultMessage = "Unable to find Workspace registration information"
+    }
 
     if($workspace -eq "Multiple") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
+        $reason = "MultipleWorkspaces"
         $resultMessage = "VM connected to multiple workspaces."
         $resultMessageId = "$ruleId.$result"
         return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
@@ -544,7 +558,7 @@ function Validate-MMALinkedWorkspace {
     $ruleGroupId = "servicehealth"
     $ruleGroupName = "VM Service Health Checks"
 
-    $workspace = Get-ValidWorkspace
+    $workspace = GetValidWorkspace
 
     $resultMessageArguments = @() + $workspace
 
