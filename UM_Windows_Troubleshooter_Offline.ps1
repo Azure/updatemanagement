@@ -324,12 +324,11 @@ function Validate-RegistrationEndpointsConnectivity {
         $result = "Failed"
         $reason = "NoRegistrationFound"
         $resultMessage = "Unable to find Workspace registration information"
-
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $resultMessageId = "$ruleId.$result.$reason"
 
-        $validationResults += New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId
+        return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
 
     if($automationAccountLocation -eq "usgovvirginia" -or $automationAccountLocation -eq "usgovarizona"){
