@@ -388,24 +388,14 @@ function Validate-OperationsEndpointConnectivity {
 
 function Validate-LAOdsEndpointConnectivity {
     #https://docs.microsoft.com/en-us/azure/automation/automation-network-configuration#update-management-and-change-tracking-and-inventory
-    $laWorkspaceId = ""
     $odsEndpoint = ""
-    $multiple = 0
     $ruleId = "LAOdsEndpointConnectivity"
     $ruleName = "LA ODS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA ODS endpoint"
 
-    try {
-        $workspaceInfo = (New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg').GetCloudWorkspaces()
-        foreach ($workspace in $workspaceInfo) {
-            $laWorkspaceId = $workspace.workspaceID.ToString()
-            $multiple += 1
-        }
-    } catch {
-        #nothing to do.
-    }
+    $workspace = Get-ValidWorkspace
 
-    if($multiple -gt 1) {
+    if($workspace -eq "Multiple") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
@@ -415,37 +405,53 @@ function Validate-LAOdsEndpointConnectivity {
     }
 
     if($automationAccountLocation -eq "usgovvirginia"){
-        $odsEndpoint = "$laWorkspaceId.ods.opinsights.azure.us"
+        $odsEndpoint = "$workspace.ods.opinsights.azure.us"
     } elseif($automationAccountLocation -eq "chinaeast2") {
-        $odsEndpoint = "$laWorkspaceId.ods.opinsights.azure.cn"
+        $odsEndpoint = "$workspace.ods.opinsights.azure.cn"
     } else {
-        $odsEndpoint = "$laWorkspaceId.ods.opinsights.azure.com"
+        $odsEndpoint = "$workspace.ods.opinsights.azure.com"
     }
 
     return Validate-EndpointConnectivity $odsEndpoint $ruleId $ruleName $ruleDescription
 }
 
+function Get-ValidWorkspace {
+    try {
+        $mmaChannel = "Operations Manager"
+        $eventId = 1210
+        $workspaces = Get-WinEvent $mmaChannel | Where-Object { ($_.Id -eq $eventId) -and ($_.Message.IndexOf("updates;")) -ne -1 } | Select-Object -Property {$_.Message.Substring($_.Message.IndexOf("AOI-")+4, 36)} -Unique
+
+        $cnt = 0
+        $validWorkspace = "";
+        Foreach ($w in $workspaces)
+        {
+            $cnt += 1
+            $validWorkspace = $w
+        }
+
+        if ($cnt -eq 1) {
+            return $validWorkspace.'$_.Message.Substring($_.Message.IndexOf("AOI-")+4, 36)' #Only one valid workspace found.
+        } elseif($cnt -gt 1) {
+            return "Multiple" #VM connected to multiple workspaces
+        } else {
+            return "None" #Event id exists, but no workspace found with updates' solution.
+        }
+    } catch {
+        return "None" #No such eventId or event channel exist
+    }
+}
+
 function Validate-LAOmsEndpointConnectivity {
     #https://docs.microsoft.com/en-us/azure/automation/automation-network-configuration#update-management-and-change-tracking-and-inventory
-    $laWorkspaceId = ""
     $omsEndpoint = ""
-    $multiple = 0
 
     $ruleId = "LAOmsEndpointConnectivity"
     $ruleName = "LA OMS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA OMS endpoint"
 
-    try {
-        $workspaceInfo = (New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg').GetCloudWorkspaces()
-        foreach ($workspace in $workspaceInfo) {
-            $laWorkspaceId = $workspace.workspaceID.ToString()
-            $multiple += 1
-        }
-    } catch {
-        #nothing to do.
-    }
+    $workspace = Get-ValidWorkspace
 
-    if($multiple -gt 1) {
+    if($workspace -eq "Multiple") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
@@ -455,11 +461,11 @@ function Validate-LAOmsEndpointConnectivity {
     }
 
     if($automationAccountLocation -eq "usgovvirginia"){
-        $omsEndpoint = "$laWorkspaceId.oms.opinsights.azure.us"
+        $omsEndpoint = "$workspace.oms.opinsights.azure.us"
     } elseif($automationAccountLocation -eq "chinaeast2") {
-        $omsEndpoint = "$laWorkspaceId.oms.opinsights.azure.cn"
+        $omsEndpoint = "$workspace.oms.opinsights.azure.cn"
     } else {
-        $omsEndpoint = "$laWorkspaceId.oms.opinsights.azure.com"
+        $omsEndpoint = "$workspace.oms.opinsights.azure.com"
     }
 
     return Validate-EndpointConnectivity $omsEndpoint $ruleId $ruleName $ruleDescription
@@ -538,34 +544,23 @@ function Validate-MMALinkedWorkspace {
     $ruleGroupId = "servicehealth"
     $ruleGroupName = "VM Service Health Checks"
 
-    $workspaceId = "";
-    $workspaceCount = 0;
+    $workspace = Get-ValidWorkspace
 
-    try {
-        $workspaceInfo = (New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg').GetCloudWorkspaces()
-        foreach ($workspace in $workspaceInfo) {
-            $workspaceId += $workspace.workspaceID.ToString() + " "
-            $workspaceCount += 1
-        }
-    } catch {
-        #nothing to do.
-    }
-    
-    $resultMessageArguments = @() + $workspaceId
+    $resultMessageArguments = @() + $workspace
 
-    if ("".equals($workspaceId)) {
+    if ("None".equals($workspace)) {
         $result = "Failed"
         $resultMessage = "VM is not reporting to any workspace."
         $reason = "NoWorkspace"
         $resultMessageId = "$ruleId.$result.$reason"
     }
     else {
-        if ($workspaceCount -gt 1) {
+        if ("Multiple".equals($workspace)) {
             $result = "Failed"
-            $resultMessage = "VM is reporting to multiple workspaces, WorkspaceIds: $workspaceId. Please make sure automation account is linked to single workspace."
+            $resultMessage = "VM is reporting to multiple workspaces. Please make sure automation account is linked to single workspace."
         } else {
             $result = "Passed"
-            $resultMessage = "VM is reporting to workspace $workspaceId. Please make sure automation account is linked to same workspace."
+            $resultMessage = "VM is reporting to workspace $workspace. Please make sure automation account is linked to same workspace."
         }
         $resultMessageId = "$ruleId.$result"
     }
