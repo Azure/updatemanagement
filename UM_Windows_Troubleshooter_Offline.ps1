@@ -389,9 +389,13 @@ function Validate-LAOdsEndpointConnectivity {
     $workspace = GetValidWorkspace
 
     if($workspace -eq "None") {
+        $ruleGroupId = "connectivity"
+        $ruleGroupName = "connectivity"
         $result = "Failed"
         $reason = "NoRegistrationFound"
         $resultMessage = "Unable to find Workspace registration information"
+        $resultMessageId = "$ruleId.$result"
+        return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
 
     if($workspace -eq "Multiple") {
@@ -459,9 +463,13 @@ function Validate-LAOmsEndpointConnectivity {
     $workspace = GetValidWorkspace
 
     if($workspace -eq "None") {
+        $ruleGroupId = "connectivity"
+        $ruleGroupName = "connectivity"
         $result = "Failed"
         $reason = "NoRegistrationFound"
         $resultMessage = "Unable to find Workspace registration information"
+        $resultMessageId = "$ruleId.$result"
+        return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
 
     if($workspace -eq "Multiple") {
