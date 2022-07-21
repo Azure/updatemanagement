@@ -315,7 +315,7 @@ function Validate-EndpointConnectivity {
 function Validate-RegistrationEndpointsConnectivity {
     $validationResults = @()
 
-    $workspace = GetValidWorkspace
+    $workspace = Get-ValidWorkspace
 
     if($workspace -eq "Multiple" -or $workspace -eq "None") {
         $ruleId = "AutomationAgentServiceConnectivityCheck1"
@@ -385,7 +385,7 @@ function Validate-LAOdsEndpointConnectivity {
     $ruleName = "LA ODS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA ODS endpoint"
 
-    $workspace = GetValidWorkspace
+    $workspace = Get-ValidWorkspace
 
     if($workspace -eq "None") {
         $ruleGroupId = "connectivity"
@@ -418,9 +418,20 @@ function Validate-LAOdsEndpointConnectivity {
     return Validate-EndpointConnectivity $odsEndpoint $ruleId $ruleName $ruleDescription
 }
 
-function GetValidWorkspace {
+function Get-ValidWorkspace {
     if($global:validWorkspace -ne "") {
         return $global:validWorkspace
+    }
+
+    $wsFromAgentCmd = @{}
+
+    try {
+        $workspaceInfo = (New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg').GetCloudWorkspaces()
+        foreach ($workspace in $workspaceInfo) {
+            $laWorkspaceId = $workspace.workspaceID.ToString()
+            $wsFromAgentCmd[$laWorkspaceId] = 1
+        }
+    } catch { #pass
     }
 
     try {
@@ -431,8 +442,12 @@ function GetValidWorkspace {
         $cnt = 0
         Foreach ($w in $workspaces)
         {
-            $cnt += 1
-            $global:validWorkspace = $w.'$_.Message.Substring($_.Message.IndexOf("AOI-")+4, 36)'
+            $w = $w.'$_.Message.Substring($_.Message.IndexOf("AOI-")+4, 36)'
+
+            if($wsFromAgentCmd[$w] -eq 1) {
+                $cnt += 1
+                $global:validWorkspace = $w
+            }
         }
 
         if ($cnt -eq 1) {
@@ -459,7 +474,7 @@ function Validate-LAOmsEndpointConnectivity {
     $ruleName = "LA OMS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA OMS endpoint"
 
-    $workspace = GetValidWorkspace
+    $workspace = Get-ValidWorkspace
 
     if($workspace -eq "None") {
         $ruleGroupId = "connectivity"
@@ -565,7 +580,7 @@ function Validate-MMALinkedWorkspace {
     $ruleGroupId = "servicehealth"
     $ruleGroupName = "VM Service Health Checks"
 
-    $workspace = GetValidWorkspace
+    $workspace = Get-ValidWorkspace
 
     $resultMessageArguments = @() + $workspace
 
