@@ -43,7 +43,9 @@ param(
     [switch]$returnAsJson
 )
 
-$global:validWorkspace = ""
+$global:validWorkspaceReason = ""
+$global:validWorkspaceId = ""
+
 $validationResults = @()
 [string]$CurrentResult = ""
 [string]$CurrentDetails = ""
@@ -315,9 +317,9 @@ function Validate-EndpointConnectivity {
 function Validate-RegistrationEndpointsConnectivity {
     $validationResults = @()
 
-    $workspace = Get-ValidWorkspace
+    $workspaceReason = Get-ValidWorkspace
 
-    if($workspace -eq "Multiple" -or $workspace -eq "None") {
+    if($workspaceReason -eq "Multiple" -or $workspaceReason -eq "None") {
         $ruleId = "AutomationAgentServiceConnectivityCheck1"
         $ruleName = "Registration endpoint"
 
@@ -330,6 +332,8 @@ function Validate-RegistrationEndpointsConnectivity {
 
         return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
+
+    $workspace = $global:validWorkspaceId
 
     if($automationAccountLocation -eq "usgovvirginia" -or $automationAccountLocation -eq "usgovarizona"){
         $endpoint = "$workspace.agentsvc.azure-automation.us"
@@ -385,9 +389,9 @@ function Validate-LAOdsEndpointConnectivity {
     $ruleName = "LA ODS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA ODS endpoint"
 
-    $workspace = Get-ValidWorkspace
+    $workspaceReason = Get-ValidWorkspace
 
-    if($workspace -eq "None") {
+    if($workspaceReason -eq "None") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
@@ -397,7 +401,7 @@ function Validate-LAOdsEndpointConnectivity {
         return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
 
-    if($workspace -eq "Multiple") {
+    if($workspaceReason -eq "Multiple") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
@@ -406,6 +410,8 @@ function Validate-LAOdsEndpointConnectivity {
         $resultMessageId = "$ruleId.$result"
         return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
+
+    $workspace = $global:validWorkspaceId
 
     if($automationAccountLocation -eq "usgovvirginia"){
         $odsEndpoint = "$workspace.ods.opinsights.azure.us"
@@ -419,8 +425,8 @@ function Validate-LAOdsEndpointConnectivity {
 }
 
 function Get-ValidWorkspace {
-    if($global:validWorkspace -ne "") {
-        return $global:validWorkspace
+    if($global:validWorkspaceReason -ne "") {
+        return $global:validWorkspaceReason
     }
 
     $wsFromAgentCmd = @{}
@@ -448,27 +454,28 @@ function Get-ValidWorkspace {
 
             if($wsFromAgentCmd[$w] -eq 1) {
                 $cnt += 1
-                $global:validWorkspace = $w
+                $global:validWorkspaceId = $w
             }
         }
 
         if ($cnt -eq 1) {
             if($totalWorkspacePresent -gt 1) {
-                $global:validWorkspace = "MultipleButValid"
+                $global:validWorkspaceReason = "MultipleButValid"
             }
-            return $global:validWorkspace #Only one valid workspace found.
+            return $global:validWorkspaceReason #Only one valid workspace found.
         } elseif($cnt -gt 1) {
-            $global:validWorkspace = "Multiple"
+            $global:validWorkspaceReason = "Multiple"
+            $global:validWorkspaceId = ""
             #VM connected to multiple workspaces
         } else {
-            $global:validWorkspace = "None"
+            $global:validWorkspaceReason = "None"
             #Event id exists, but no workspace found with updates' solution.
         }
     } catch {
-        $global:validWorkspace = "None" #No such eventId or event channel exist
+        $global:validWorkspaceReason = "None" #No such eventId or event channel exist
     }
 
-    return $global:validWorkspace
+    return $global:validWorkspaceReason
 }
 
 function Validate-LAOmsEndpointConnectivity {
@@ -479,9 +486,9 @@ function Validate-LAOmsEndpointConnectivity {
     $ruleName = "LA OMS endpoint"
     $ruleDescription = "Proxy and firewall configuration must allow to communicate with LA OMS endpoint"
 
-    $workspace = Get-ValidWorkspace
+    $workspaceReason = Get-ValidWorkspace
 
-    if($workspace -eq "None") {
+    if($workspaceReason -eq "None") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
@@ -491,7 +498,7 @@ function Validate-LAOmsEndpointConnectivity {
         return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
 
-    if($workspace -eq "Multiple") {
+    if($workspaceReason -eq "Multiple") {
         $ruleGroupId = "connectivity"
         $ruleGroupName = "connectivity"
         $result = "Failed"
@@ -500,6 +507,8 @@ function Validate-LAOmsEndpointConnectivity {
         $resultMessageId = "$ruleId.$result"
         return New-RuleCheckResult $ruleId $ruleName $ruleDescription $result $resultMessage $ruleGroupId $ruleGroupName $resultMessageId $resultMessageArguments
     }
+
+    $workspace = $global:validWorkspaceId
 
     if($automationAccountLocation -eq "usgovvirginia"){
         $omsEndpoint = "$workspace.oms.opinsights.azure.us"
@@ -584,22 +593,23 @@ function Validate-MMALinkedWorkspace {
     $resultMessage = $null
     $ruleGroupId = "servicehealth"
     $ruleGroupName = "VM Service Health Checks"
-
-    $workspace = Get-ValidWorkspace
+    
+    $workspaceReason = Get-ValidWorkspace
+    $workspace = $global:validWorkspaceId
 
     $resultMessageArguments = @() + $workspace
 
-    if ("None".equals($workspace)) {
+    if ("None".equals($workspaceReason)) {
         $result = "Failed"
         $resultMessage = "VM is not reporting to any workspace."
         $reason = "NoWorkspace"
         $resultMessageId = "$ruleId.$result.$reason"
     }
     else {
-        if ("MultipleButValid".equals($workspace)) {
+        if ("MultipleButValid".equals($workspaceReason)) {
             $result = "MultipleButValid"
             $resultMessage = "Although VM is reporting to multiple workspaces, the updates solution is configured in only one workspace: $workspace. Please make sure automation account is linked to same workspace."
-        } elseif ("Multiple".equals($workspace)) {
+        } elseif ("Multiple".equals($workspaceReason)) {
             $result = "Failed"
             $resultMessage = "VM is reporting to multiple workspaces. Please make sure automation account is linked to single workspace."
         } else {
