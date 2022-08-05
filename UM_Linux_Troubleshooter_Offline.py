@@ -863,7 +863,7 @@ def printDebug(*args):
     msg = ''.join(args)
     print("RepoAccessCheck:: " + msg)
 
-OSType = enum(NotAvailable = 0, Ubuntu = 1, Suse = 2, Redhat = 3, CentOs = 4)
+OSType = enum(NotAvailable = 0, Ubuntu = 1, Suse = 2, Redhat = 3, CentOs = 4, Oracle = 5)
 
 class RepositoryManager:
     def __init__(self):
