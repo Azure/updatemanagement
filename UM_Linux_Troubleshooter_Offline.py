@@ -1299,7 +1299,7 @@ def check_dmidecode():
     curl_cmd = "sudo dmidecode | grep '7783-7084-3265-9085-8269-3286-77'"
     code, out = utils.run_command_output(curl_cmd, False, False)
 
-    if code == 0:
+    if code == 0 and ("7783-7084-3265-9085-8269-3286-77" in out):
         write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "Dmidecode output: " + str(out))
         write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Dmidecode asset tag value present. (Applicable to azure virtual machines only.)")
     else:
