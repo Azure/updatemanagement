@@ -1056,6 +1056,7 @@ def main(output_path=None, return_json_output="False"):
 
     get_machine_info()
     check_os_version()
+    check_dmidecode()
     check_oms_agent_installed()
     check_oms_agent_running()
     check_multihoming()
@@ -1291,11 +1292,25 @@ def check_imds_connectivity():
     else:
         write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Machine is not able to reach IMDS server. (Applicable to azure virtual machines only.)")
 
+def check_dmidecode():
+    rule_id = "Linux.DmidecodeCheck"
+    rule_group_id = "prerequisites"
+
+    curl_cmd = "sudo dmidecode | grep '7783-7084-3265-9085-8269-3286-77'"
+    code, out = utils.run_command_output(curl_cmd, False, False)
+
+    if code == 0 and ("7783-7084-3265-9085-8269-3286-77" in out):
+        write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "Dmidecode output: " + str(out))
+        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Dmidecode asset tag value present. (Applicable to azure virtual machines only.)")
+    else:
+        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Dmidecode asset tag value not present. (Applicable to azure virtual machines only.)")
+
+
 def check_general_internet_connectivity():
     rule_id = "Linux.InternetConnectionCheck"
     rule_group_id = "connectivity"
 
-    if check_endpoint(None, "bing.com") and check_endpoint(None, "google.com"):
+    if check_endpoint(None, "bing.com"):
         write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Machine is connected to internet")
     else:
         write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Machine is not connected to internet")
@@ -1366,7 +1381,6 @@ def check_endpoint(workspace, endpoint):
             new_endpoint = endpoint
 
         if new_endpoint is not None:
-            
                 response = sock.connect_ex((new_endpoint, 443))
 
                 if response == 0:
