@@ -611,7 +611,7 @@ function Validate-MMALinkedWorkspace {
             $resultMessage = "Although VM is reporting to multiple workspaces, the updates solution is configured in only one workspace: $workspace. Please make sure automation account is linked to same workspace."
         } elseif ("Multiple".equals($workspaceReason)) {
             $result = "Failed"
-            $resultMessage = "VM is reporting to multiple workspaces. Please make sure automation account is linked to single workspace."
+            $resultMessage = "VM is reporting to multiple workspaces with updates solution configured. Please make sure that only one workspace has updates solution and automation account is linked to that workspace."
         } else {
             $result = "Passed"
             $resultMessage = "VM is reporting to workspace $workspace. Please make sure automation account is linked to same workspace."
