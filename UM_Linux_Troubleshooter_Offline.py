@@ -1157,7 +1157,7 @@ def check_oms_agent_installed():
     oms_agent_troubleshooting_url = "https://github.com/Microsoft/OMS-Agent-for-Linux/blob/master/docs/Troubleshooting.md"
 
     if os.path.isfile(oms_admin_conf_path) and os.path.isfile(oms_agent_log):
-        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Microsoft Monitoring agent is installed")
+        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "OMS agent is installed")
 
         oms_admin_file_content = "\t"
         oms_admin_file = open(oms_admin_conf_path, "r")
@@ -1167,8 +1167,8 @@ def check_oms_agent_installed():
         oms_admin_file.close()
         write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "omsadmin.conf file contents:\n" + oms_admin_file_content)
     else:
-        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Microsoft Monitoring agent is not installed", oms_agent_troubleshooting_url)
-        write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "Microsoft Monitoring agent troubleshooting guide:" + oms_agent_troubleshooting_url)
+        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "OMS agent is not installed", oms_agent_troubleshooting_url)
+        write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "OMS agent troubleshooting guide:" + oms_agent_troubleshooting_url)
         return
 
 def check_oms_agent_running():
@@ -1178,11 +1178,11 @@ def check_oms_agent_running():
 
     is_oms_agent_running, ps_output = is_process_running("omsagent", ["omsagent.log", "omsagent.conf"], "OMS Agent")
     if is_oms_agent_running:
-        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "Microsoft Monitoring agent is running")
+        write_log_output(rule_id, rule_group_id, status_passed, empty_failure_reason, "OMS agent is running")
     else:
-        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "Microsoft Monitoring agent is not running", oms_agent_troubleshooting_url)
+        write_log_output(rule_id, rule_group_id, status_failed, empty_failure_reason, "OMS agent is not running", oms_agent_troubleshooting_url)
         write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, ps_output)
-        write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "Microsoft Monitoring agent troubleshooting guide:" + oms_agent_troubleshooting_url)
+        write_log_output(rule_id, rule_group_id, status_debug, empty_failure_reason, "OMS agent troubleshooting guide:" + oms_agent_troubleshooting_url)
 
 def check_multihoming():
     rule_id = "Linux.MultiHomingCheck"
