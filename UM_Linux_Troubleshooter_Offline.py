@@ -1357,6 +1357,20 @@ def check_log_analytics_endpoints():
                 write_log_output(rule_id + str(i), rule_group_id, status_passed, empty_failure_reason, "TCP test for {" + endpoint + "} (port 443) succeeded", endpoint)
             else:
                 write_log_output(rule_id + str(i), rule_group_id, status_failed, empty_failure_reason, "TCP test for {" + endpoint + "} (port 443) failed", endpoint)
+
+    elif is_mooncake_region() is True:
+        mooncake_log_analytics_endpoints = ["*.ods.opinsights.azure.cn", "*.oms.opinsights.azure.cn" ]
+
+        for endpoint in mooncake_log_analytics_endpoints:
+            i += 1
+            if "*" in endpoint and workspace is not None:
+                endpoint = endpoint.replace("*", workspace)
+
+            if check_endpoint(workspace, endpoint):
+                write_log_output(rule_id + str(i), rule_group_id, status_passed, empty_failure_reason, "TCP test for {" + endpoint + "} (port 443) succeeded", endpoint)
+            else:
+                write_log_output(rule_id + str(i), rule_group_id, status_failed, empty_failure_reason, "TCP test for {" + endpoint + "} (port 443) failed", endpoint)
+
     else:
         log_analytics_endpoints = ["*.ods.opinsights.azure.com", "*.oms.opinsights.azure.com"]
         for endpoint in log_analytics_endpoints:
@@ -1431,6 +1445,11 @@ def is_fairfax_region():
     oms_endpoint = find_line_in_file("OMS_ENDPOINT", oms_admin_conf_path)
     if oms_endpoint is not None:
         return ".us" in oms_endpoint.split("=")[1]
+
+def is_mooncake_region():
+    oms_endpoint = find_line_in_file("OMS_ENDPOINT", oms_admin_conf_path)
+    if oms_endpoint is not None:
+        return ".cn" in oms_endpoint.split("=")[1]
 
 def find_line_in_file(search_text, path, file_encoding=""):
     if os.path.isfile(path):
